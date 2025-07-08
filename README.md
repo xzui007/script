@@ -13,7 +13,6 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
 
 repeat task.wait() until LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.Character
 
@@ -32,9 +31,9 @@ local config = {
     autoCollectDrops = false
 }
 
--- Valores padrão de velocidade (20 de velocidade padrão conforme solicitado)
+-- WalkSpeed
 local SPEED_NORMAL = 20
-local SPEED_BOOST = 20
+local SPEED_BOOST = 40
 
 -- Proteção anti-kick/idle
 for _,v in pairs(getconnections(LocalPlayer.Idled)) do v:Disable() end
@@ -76,96 +75,134 @@ info.Font = Enum.Font.Gotham
 info.TextSize = 13
 info.BackgroundTransparency = 1
 
--- Função segura para teleporte com Tween
+-- Teleporte seguro via Tween
 local function safeTweenTo(targetPos, speed)
     local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    local tween = TweenService:Create(hrp, TweenInfo.new(speed or 0.9, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos)})
+    local tween = TweenService:Create(hrp, TweenInfo.new(speed or 0.7, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos)})
     tween:Play()
     tween.Completed:Wait()
 end
 
--- Função de Auto Escape automático
+-- Auto Escape (Procura partes chamadas "Escape" ou "Saída")
 local function autoEscape()
     local char = LocalPlayer.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    for _,v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("Part") and v.Name:lower():find("escape") then
-            safeTweenTo(v.Position + Vector3.new(0,3,0), 1)
+    for _,v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") and (v.Name:lower():find("escape") or v.Name:lower():find("saida")) then
+            safeTweenTo(v.Position + Vector3.new(0,4,0), 1)
             break
         end
     end
 end
 
--- Função de pegar drops automaticamente
+-- Auto Collect (Procura partes com "drop", "item" ou "reward")
 local function autoCollectDrops()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    for _,drop in pairs(Workspace:GetDescendants()) do
-        if drop:IsA("Part") and drop.Name:lower():find("drop") then
-            safeTweenTo(drop.Position + Vector3.new(0,1.5,0), 0.5)
-            task.wait(0.2)
+    for _,drop in ipairs(Workspace:GetDescendants()) do
+        if drop:IsA("BasePart") and (drop.Name:lower():find("drop") or drop.Name:lower():find("item") or drop.Name:lower():find("reward")) then
+            safeTweenTo(drop.Position + Vector3.new(0,2,0), 0.5)
+            task.wait(0.1)
         end
     end
 end
 
--- Função de alerta de proximidade
-local function checarProximidade(alvo, distMax)
+-- Alerta de proximidade
+local function checarProximidade(distMax)
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    local menor = math.huge
-    for _,p in pairs(Players:GetPlayers()) do
+    for _,p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
             local dist = (hrp.Position - p.Character.HumanoidRootPart.Position).Magnitude
-            if dist < menor then menor = dist end
-        end
-    end
-    if menor < distMax then
-        if not gui:FindFirstChild("ProxAlert") then
-            local alert = Instance.new("TextLabel", gui)
-            alert.Name = "ProxAlert"
-            alert.Size = UDim2.new(1,0,0,32)
-            alert.Position = UDim2.new(0,0,0,0)
-            alert.BackgroundTransparency = 0.3
-            alert.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-            alert.Text = "🚨 Jogador próximo! ["..math.floor(menor).." studs]"
-            alert.Font = Enum.Font.GothamBold
-            alert.TextSize = 19
-            alert.TextColor3 = Color3.new(1,1,1)
-            task.spawn(function()
-                task.wait(2.5)
-                alert:Destroy()
-            end)
+            if dist < distMax then
+                if not gui:FindFirstChild("ProxAlert") then
+                    local alert = Instance.new("TextLabel", gui)
+                    alert.Name = "ProxAlert"
+                    alert.Size = UDim2.new(1,0,0,32)
+                    alert.Position = UDim2.new(0,0,0,0)
+                    alert.BackgroundTransparency = 0.3
+                    alert.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+                    alert.Text = "🚨 Jogador próximo! ["..math.floor(dist).." studs]"
+                    alert.Font = Enum.Font.GothamBold
+                    alert.TextSize = 19
+                    alert.TextColor3 = Color3.new(1,1,1)
+                    task.spawn(function()
+                        task.wait(2.5)
+                        alert:Destroy()
+                    end)
+                end
+                break
+            end
         end
     end
 end
 
--- Anti-crash básico
-local function antiCrash()
+-- ESP Jogadores (corrigido)
+local function criarESP()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and not p.Character.Head:FindFirstChild("ESP") then
+            local esp = Instance.new("BillboardGui")
+            esp.Name = "ESP"
+            esp.Size = UDim2.new(0,100,0,40)
+            esp.AlwaysOnTop = true
+            esp.Parent = p.Character.Head
+            local texto = Instance.new("TextLabel", esp)
+            texto.Size = UDim2.new(1,0,1,0)
+            texto.BackgroundTransparency = 1
+            texto.Text = p.DisplayName
+            texto.TextColor3 = Color3.new(1,0,0)
+            texto.TextScaled = true
+            texto.Font = Enum.Font.GothamBold
+        end
+    end
+end
+
+-- Auto Farm (corrigido)
+local function autoFarm()
     local char = LocalPlayer.Character
-    if char and char:FindFirstChildOfClass("Humanoid") then
-        if char:FindFirstChildOfClass("Humanoid").Health <= 0 then
-            LocalPlayer:Kick("Desconectado por morte/crash.")
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local minDist, objAlvo = math.huge, nil
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent:IsA("Model") then
+            local model = obj.Parent
+            local pos = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
+            if pos then
+                local dist = (hrp.Position - pos.Position).Magnitude
+                if dist < minDist then
+                    minDist = dist
+                    objAlvo = obj
+                end
+            end
+        end
+    end
+    if objAlvo then
+        local pos = objAlvo.Parent:FindFirstChild("HumanoidRootPart") or objAlvo.Parent:FindFirstChild("Head")
+        if pos then
+            safeTweenTo(pos.Position + Vector3.new(0,2,0), 0.5)
+            fireproximityprompt(objAlvo, 1)
         end
     end
 end
 
--- Garante que WalkSpeed seja restaurado ao respawnar
+-- Garante que WalkSpeed seja restaurado no respawn
 LocalPlayer.CharacterAdded:Connect(function(char)
     char:WaitForChild("Humanoid").WalkSpeed = SPEED_NORMAL
 end)
 
--- InfiniteJump, Noclip, Boost, Float & AutoFarm
+-- Loop principal
 RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
     local humanoid = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    -- Boost de velocidade via WalkSpeed (não CFrame)
+    -- Boost de velocidade via WalkSpeed seguro
     if humanoid then
         if config.speedBoost then
             humanoid.WalkSpeed = SPEED_BOOST
@@ -180,31 +217,11 @@ RunService.RenderStepped:Connect(function()
         local goal = Vector3.new(0, 120, 0)
         hrp.CFrame = hrp.CFrame:Lerp(CFrame.new(goal), 0.05)
     end
-    if config.autoFarm and hrp then
-        local minDist, objAlvo = math.huge, nil
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent:IsA("Model") then
-                local model = obj.Parent
-                local pos = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
-                if pos then
-                    local dist = (hrp.Position - pos.Position).Magnitude
-                    if dist < minDist then
-                        minDist = dist
-                        objAlvo = obj
-                    end
-                end
-            end
-        end
-        if objAlvo then
-            local pos = objAlvo.Parent:FindFirstChild("HumanoidRootPart") or objAlvo.Parent:FindFirstChild("Head")
-            if pos then
-                safeTweenTo(pos.Position + Vector3.new(0,2,0), 0.7)
-                fireproximityprompt(objAlvo, 0)
-            end
-        end
+    if config.autoFarm then
+        autoFarm()
     end
     if config.alertaProximidade then
-        checarProximidade(nil, 18)
+        checarProximidade(18)
     end
     if config.autoEscape then
         autoEscape()
@@ -212,10 +229,8 @@ RunService.RenderStepped:Connect(function()
     if config.autoCollectDrops then
         autoCollectDrops()
     end
-    antiCrash()
 end)
 
--- InfiniteJump e outras teclas
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.Space and config.infiniteJump then
@@ -241,9 +256,8 @@ UserInputService.InputBegan:Connect(function(input, gp)
         end
     end
     if input.KeyCode == Enum.KeyCode.F then
-        -- Teleporte rápido para algum player aleatório exceto você
         local list = {}
-        for _,p in pairs(Players:GetPlayers()) do
+        for _,p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                 table.insert(list, p.Character.HumanoidRootPart.Position)
             end
@@ -261,28 +275,11 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- ESP avançado
-local function criarESP()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and not p.Character.Head:FindFirstChild("ESP") then
-            local esp = Instance.new("BillboardGui", p.Character.Head)
-            esp.Name = "ESP"
-            esp.Size = UDim2.new(0,100,0,40)
-            esp.AlwaysOnTop = true
-            local texto = Instance.new("TextLabel", esp)
-            texto.Size = UDim2.new(1,0,1,0)
-            texto.BackgroundTransparency = 1
-            texto.Text = p.DisplayName .. " [HP: " .. math.floor((p.Character:FindFirstChildOfClass("Humanoid") and p.Character:FindFirstChildOfClass("Humanoid").Health) or 0) .. "]"
-            texto.TextColor3 = Color3.new(1,0,0)
-            texto.TextScaled = true
-        end
-    end
-end
 RunService.RenderStepped:Connect(function()
     if config.espPlayers then criarESP() end
 end)
 
--- Botões
+-- Botões UI
 local function criarBotao(texto, ordem, chave)
     local botao = Instance.new("TextButton")
     botao.Size = UDim2.new(0.9, 0, 0, 34)
@@ -312,6 +309,6 @@ criarBotao("🚀 Flutuar até Base (V)", 8, "floatToBase")
 criarBotao("🆘 Auto Escape (E)", 9, "autoEscape")
 criarBotao("💎 Coletar Drops (Z)", 10, "autoCollectDrops")
 
-print("✅ Brainrot Hub Turbo ADVANCED carregado com sucesso. Aproveite!")
+print("✅ Brainrot Hub Turbo ADVANCED recarregado com funções corrigidas!")
 
 -- Fim do Script
