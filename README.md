@@ -215,7 +215,7 @@ RunService.RenderStepped:Connect(function()
     antiCrash()
 end)
 
--- InfiniteJump
+-- InfiniteJump e outras teclas
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.Space and config.infiniteJump then
