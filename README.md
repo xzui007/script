@@ -2,7 +2,7 @@
     Brainrot Hub PRO - ULTRA SAFE EDITION
     Script seguro e otimizado para "Roube um Brainrot" (Roblox)
     By xzui007 & Copilot
-    Funções: Auto Farm, ESP, Boost, Noclip, Infinite Jump, Float seguro, Auto Escape, Coleta, UI simples, Proteção anti-AFK e bugs comuns
+    Funções: Auto Farm, ESP, Boost, Noclip, Infinite Jump, Teleporte Altura, Auto Escape, Coleta, UI simples, Proteção anti-AFK e bugs comuns
 ]]
 
 -- Roblox Services
@@ -24,14 +24,14 @@ local config = {
     noclip = false,
     espPlayers = false,
     speedBoost = false,
-    floatMode = false,
+    tpAltura = false,
+    tpDescer = false,
     autoEscape = false,
     autoCollect = false
 }
 
 local SPEED_NORMAL = 20
 local SPEED_BOOST = 40
-local FLOAT_HEIGHT = 120
 
 -- Proteção anti-AFK
 for _,v in pairs(getconnections(LocalPlayer.Idled)) do
@@ -49,8 +49,8 @@ gui.Name = "BrainrotUltraSafeUI"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 340, 0, 480)
-frame.Position = UDim2.new(0.5, -170, 0.5, -240)
+frame.Size = UDim2.new(0, 340, 0, 520)
+frame.Position = UDim2.new(0.5, -170, 0.5, -260)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.BackgroundTransparency = 0.05
 frame.Active = true
@@ -86,9 +86,10 @@ criarBotao("Infinite Jump", 2, "infiniteJump")
 criarBotao("Noclip", 3, "noclip")
 criarBotao("ESP Jogadores", 4, "espPlayers")
 criarBotao("Boost Velocidade", 5, "speedBoost")
-criarBotao("Flutuar Seguro", 6, "floatMode")
-criarBotao("Auto Escape", 7, "autoEscape")
-criarBotao("Coletar Drops", 8, "autoCollect")
+criarBotao("Teleporta Altura 1000", 6, "tpAltura")
+criarBotao("Descer 100", 7, "tpDescer")
+criarBotao("Auto Escape", 8, "autoEscape")
+criarBotao("Coletar Drops", 9, "autoCollect")
 
 -- ESP seguro
 local function criarESP()
@@ -140,18 +141,24 @@ local function autoFarm()
     end
 end
 
--- Flutuar seguro
-local function floatSafe()
+-- Teleportar para Y = 1000
+local function tpAltura1000()
     local char = LocalPlayer.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    if math.abs(hrp.Position.Y - FLOAT_HEIGHT) > 2 then
-        hrp.Velocity = Vector3.new(0, 40, 0)
-        hrp.CFrame = hrp.CFrame:Lerp(CFrame.new(hrp.Position.X, FLOAT_HEIGHT, hrp.Position.Z), 0.18)
-    else
-        hrp.Velocity = Vector3.new(0,0,0)
-    end
+    local pos = hrp.Position
+    hrp.CFrame = CFrame.new(pos.X, 1000, pos.Z)
+end
+
+-- Descer 100
+local function descer100()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local pos = hrp.Position
+    hrp.CFrame = CFrame.new(pos.X, pos.Y - 100, pos.Z)
 end
 
 -- Auto Escape seguro
@@ -200,8 +207,13 @@ RunService.RenderStepped:Connect(function()
     if config.espPlayers then
         criarESP()
     end
-    if config.floatMode and hrp then
-        floatSafe()
+    if config.tpAltura then
+        tpAltura1000()
+        config.tpAltura = false -- só executa uma vez por clique
+    end
+    if config.tpDescer then
+        descer100()
+        config.tpDescer = false -- só executa uma vez por clique
     end
     if config.autoFarm then
         autoFarm()
@@ -224,8 +236,11 @@ UserInputService.InputBegan:Connect(function(input, gp)
     if input.KeyCode == Enum.KeyCode.Q then
         config.speedBoost = not config.speedBoost
     end
-    if input.KeyCode == Enum.KeyCode.V then
-        config.floatMode = not config.floatMode
+    if input.KeyCode == Enum.KeyCode.G then
+        config.tpAltura = true
+    end
+    if input.KeyCode == Enum.KeyCode.H then
+        config.tpDescer = true
     end
     if input.KeyCode == Enum.KeyCode.E then
         config.autoEscape = not config.autoEscape
@@ -235,4 +250,4 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
-print("✅ Brainrot Hub PRO ULTRA SAFE carregado com sucesso! Aproveite sem bugs.")
+print("✅ Brainrot Hub PRO ULTRA SAFE carregado com sucesso! Teleporte Altura (G), Descer 100 (H). Aproveite.")
