@@ -32,9 +32,9 @@ local config = {
     autoCollectDrops = false
 }
 
--- Valores padrão de velocidade (15 de velocidade padrão conforme solicitado)
-local SPEED_NORMAL = 15
-local SPEED_BOOST = 60
+-- Valores padrão de velocidade (20 de velocidade padrão conforme solicitado)
+local SPEED_NORMAL = 20
+local SPEED_BOOST = 20
 
 -- Proteção anti-kick/idle
 for _,v in pairs(getconnections(LocalPlayer.Idled)) do v:Disable() end
