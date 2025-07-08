@@ -1,11 +1,11 @@
 --[[
-    Brainrot Hub PRO - ULTRA SAFE EDITION
-    Script seguro e otimizado para "Roube um Brainrot" (Roblox)
-    By xzui007 & Copilot
-    Funções: Auto Farm, ESP, Boost, Noclip, Infinite Jump, Teleporte Altura, Auto Escape, Coleta, UI simples, Proteção anti-AFK e bugs comuns
+    Brainrot Hub PRO - ALL-IN-ONE (Completo)
+    Para o jogo "Roube um Brainrot"
+    Script avançado com funções automáticas e seguras
+    Feito para uso educacional - github.com/xzui007
 ]]
 
--- Roblox Services
+-- Serviços Roblox
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
@@ -14,240 +14,294 @@ local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 
--- Aguarda PlayerGui e Character
-repeat task.wait() until LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.Character
+repeat task.wait() until LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.Character
 
 -- Configuração
 local config = {
     autoFarm = false,
     infiniteJump = false,
     noclip = false,
+    teleport = false,
+    alertaProximidade = false,
     espPlayers = false,
     speedBoost = false,
-    tpAltura = false,
-    tpDescer = false,
+    floatToBase = false,
     autoEscape = false,
-    autoCollect = false
+    autoCollectDrops = false,
+    autoRevive = false
 }
 
-local SPEED_NORMAL = 20
-local SPEED_BOOST = 40
-
--- Proteção anti-AFK
-for _,v in pairs(getconnections(LocalPlayer.Idled)) do
-    v:Disable()
-end
+-- Anti-Idle/Kick
+for _,v in pairs(getconnections(LocalPlayer.Idled)) do v:Disable() end
 LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Down(Vector2.new())
     task.wait(1)
     VirtualUser:Button2Up(Vector2.new())
 end)
 
--- UI simples
+-- GUI
 local gui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
-gui.Name = "BrainrotUltraSafeUI"
+gui.Name = "BrainrotHubUI"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
+
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 340, 0, 520)
-frame.Position = UDim2.new(0.5, -170, 0.5, -260)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-frame.BackgroundTransparency = 0.05
+frame.Size = UDim2.new(0, 400, 0, 680)
+frame.Position = UDim2.new(0.5, -200, 0.5, -340)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BackgroundTransparency = 0.06
 frame.Active = true
 frame.Draggable = true
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 13)
+
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 38)
-title.Text = "🧠 Brainrot Hub PRO ULTRA SAFE"
+title.Size = UDim2.new(1, 0, 0, 40)
+title.Text = "🧠 Brainrot Hub PRO - All In One"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 20
+title.TextSize = 24
 title.TextColor3 = Color3.new(1, 1, 1)
 title.BackgroundTransparency = 1
 
-local function criarBotao(texto, ordem, chave)
-    local botao = Instance.new("TextButton")
-    botao.Size = UDim2.new(0.85, 0, 0, 30)
-    botao.Position = UDim2.new(0.075, 0, 0, 40 + (ordem - 1) * 38)
-    botao.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    botao.TextColor3 = Color3.fromRGB(200, 255, 200)
-    botao.Font = Enum.Font.GothamBold
-    botao.TextSize = 16
-    botao.Text = texto .. ": OFF"
-    botao.Parent = frame
-    Instance.new("UICorner", botao).CornerRadius = UDim.new(0, 5)
-    botao.MouseButton1Click:Connect(function()
-        config[chave] = not config[chave]
-        botao.Text = texto .. ": " .. (config[chave] and "ON" or "OFF")
-    end)
-end
+local info = Instance.new("TextLabel", frame)
+info.Size = UDim2.new(1, 0, 0, 22)
+info.Position = UDim2.new(0, 0, 1, -30)
+info.Text = "F=Teleport | T=Random TP | Q=Boost | V=Float | E=Escape | Z=Drops | R=Revive"
+info.TextColor3 = Color3.fromRGB(200,255,120)
+info.Font = Enum.Font.Gotham
+info.TextSize = 13
+info.BackgroundTransparency = 1
 
-criarBotao("Auto Farm", 1, "autoFarm")
-criarBotao("Infinite Jump", 2, "infiniteJump")
-criarBotao("Noclip", 3, "noclip")
-criarBotao("ESP Jogadores", 4, "espPlayers")
-criarBotao("Boost Velocidade", 5, "speedBoost")
-criarBotao("Teleporta Altura 1000", 6, "tpAltura")
-criarBotao("Descer 100", 7, "tpDescer")
-criarBotao("Auto Escape", 8, "autoEscape")
-criarBotao("Coletar Drops", 9, "autoCollect")
-
--- ESP seguro
-local function criarESP()
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and not p.Character.Head:FindFirstChild("ESP") then
-            local esp = Instance.new("BillboardGui")
-            esp.Name = "ESP"
-            esp.Adornee = p.Character.Head
-            esp.Size = UDim2.new(0,110,0,36)
-            esp.AlwaysOnTop = true
-            esp.Parent = p.Character.Head
-            local texto = Instance.new("TextLabel", esp)
-            texto.Size = UDim2.new(1,0,1,0)
-            texto.BackgroundTransparency = 1
-            texto.Text = p.DisplayName
-            texto.TextColor3 = Color3.new(1,0.3,0.3)
-            texto.TextScaled = true
-            texto.Font = Enum.Font.GothamBold
-        end
-    end
-end
-
--- Auto Farm seguro
-local function autoFarm()
+-- Tween seguro
+local function safeTweenTo(targetPos, speed)
     local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    local closest, dist = nil, 9999
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("ProximityPrompt") and obj.Enabled and obj.Parent and obj.Parent:IsA("Model") then
-            local pos = obj.Parent:FindFirstChild("HumanoidRootPart") or obj.Parent:FindFirstChild("Head")
-            if pos then
-                local d = (hrp.Position - pos.Position).Magnitude
-                if d < dist then
-                    dist = d
-                    closest = obj
-                end
-            end
-        end
-    end
-    if closest then
-        local pos = closest.Parent:FindFirstChild("HumanoidRootPart") or closest.Parent:FindFirstChild("Head")
-        if pos then
-            TweenService:Create(hrp, TweenInfo.new(0.4, Enum.EasingStyle.Linear), {CFrame = CFrame.new(pos.Position + Vector3.new(0,2,0))}):Play()
-            task.wait(0.45)
-            pcall(function() fireproximityprompt(closest, 1) end)
-        end
-    end
+    local tween = TweenService:Create(hrp, TweenInfo.new(speed or 0.9, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos)})
+    tween:Play()
+    tween.Completed:Wait()
 end
 
--- Teleportar para Y = 1000
-local function tpAltura1000()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local pos = hrp.Position
-    hrp.CFrame = CFrame.new(pos.X, 1000, pos.Z)
-end
-
--- Descer 100
-local function descer100()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local pos = hrp.Position
-    hrp.CFrame = CFrame.new(pos.X, pos.Y - 100, pos.Z)
-end
-
--- Auto Escape seguro
+-- Auto Escape
 local function autoEscape()
     local char = LocalPlayer.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    for _,v in ipairs(Workspace:GetDescendants()) do
-        if v:IsA("BasePart") and (v.Name:lower():find("escape") or v.Name:lower():find("saida")) then
-            TweenService:Create(hrp, TweenInfo.new(0.7, Enum.EasingStyle.Linear), {CFrame = CFrame.new(v.Position + Vector3.new(0,5,0))}):Play()
+    for _,v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Part") and v.Name:lower():find("escape") then
+            safeTweenTo(v.Position + Vector3.new(0,3,0), 1)
             break
         end
     end
 end
 
--- Auto Collect seguro
-local function autoCollect()
+-- Auto Coleta de Drops
+local function autoCollectDrops()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    for _,drop in ipairs(Workspace:GetDescendants()) do
-        if drop:IsA("BasePart") and (drop.Name:lower():find("drop") or drop.Name:lower():find("item") or drop.Name:lower():find("reward")) then
-            TweenService:Create(hrp, TweenInfo.new(0.4, Enum.EasingStyle.Linear), {CFrame = CFrame.new(drop.Position + Vector3.new(0,3,0))}):Play()
-            task.wait(0.15)
+    for _,drop in pairs(Workspace:GetDescendants()) do
+        if drop:IsA("Part") and drop.Name:lower():find("drop") then
+            safeTweenTo(drop.Position + Vector3.new(0,1.5,0), 0.5)
+            task.wait(0.2)
         end
     end
 end
 
--- Garante WalkSpeed ao respawnar
-LocalPlayer.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid").WalkSpeed = SPEED_NORMAL
-end)
+-- Auto Revive (se morrer, revive automático se houver prompt)
+local function autoRevive()
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _,desc in pairs(char:GetDescendants()) do
+        if desc:IsA("ProximityPrompt") and desc.Name:lower():find("revive") then
+            fireproximityprompt(desc, 1)
+        end
+    end
+end
 
--- Loop principal
+-- Alerta de proximidade
+local function checarProximidade(distMax)
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local menor = math.huge
+    for _,p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (hrp.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if dist < menor then menor = dist end
+        end
+    end
+    if menor < distMax then
+        if not gui:FindFirstChild("ProxAlert") then
+            local alert = Instance.new("TextLabel", gui)
+            alert.Name = "ProxAlert"
+            alert.Size = UDim2.new(1,0,0,32)
+            alert.Position = UDim2.new(0,0,0,0)
+            alert.BackgroundTransparency = 0.3
+            alert.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+            alert.Text = "🚨 Jogador próximo! ["..math.floor(menor).." studs]"
+            alert.Font = Enum.Font.GothamBold
+            alert.TextSize = 19
+            alert.TextColor3 = Color3.new(1,1,1)
+            task.spawn(function()
+                task.wait(2.5)
+                alert:Destroy()
+            end)
+        end
+    end
+end
+
+-- ESP Jogadores
+local function criarESP()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and not p.Character.Head:FindFirstChild("ESP") then
+            local esp = Instance.new("BillboardGui", p.Character.Head)
+            esp.Name = "ESP"
+            esp.Size = UDim2.new(0,100,0,40)
+            esp.AlwaysOnTop = true
+            local texto = Instance.new("TextLabel", esp)
+            texto.Size = UDim2.new(1,0,1,0)
+            texto.BackgroundTransparency = 1
+            texto.Text = p.DisplayName.." [HP: "..math.floor((p.Character:FindFirstChildOfClass("Humanoid") and p.Character:FindFirstChildOfClass("Humanoid").Health) or 0).."]"
+            texto.TextColor3 = Color3.new(1,0,0)
+            texto.TextScaled = true
+        end
+    end
+end
+
+-- Funções contínuas
 RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
-    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if humanoid then
-        humanoid.WalkSpeed = config.speedBoost and SPEED_BOOST or SPEED_NORMAL
+
+    if config.noclip and char and char:FindFirstChildOfClass("Humanoid") then
+        char:FindFirstChildOfClass("Humanoid"):ChangeState(11)
     end
-    if config.noclip and humanoid then
-        humanoid:ChangeState(11)
+    if config.speedBoost and hrp then
+        hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 2.2
     end
-    if config.espPlayers then
-        criarESP()
+    if config.floatToBase and hrp then
+        local goal = Vector3.new(0, 120, 0)
+        hrp.CFrame = hrp.CFrame:Lerp(CFrame.new(goal), 0.05)
     end
-    if config.tpAltura then
-        tpAltura1000()
-        config.tpAltura = false -- só executa uma vez por clique
+    if config.autoFarm and hrp then
+        local minDist, objAlvo = math.huge, nil
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") and obj.Parent and obj.Parent:IsA("Model") then
+                local model = obj.Parent
+                local pos = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
+                if pos then
+                    local dist = (hrp.Position - pos.Position).Magnitude
+                    if dist < minDist then
+                        minDist = dist
+                        objAlvo = obj
+                    end
+                end
+            end
+        end
+        if objAlvo then
+            local pos = objAlvo.Parent:FindFirstChild("HumanoidRootPart") or objAlvo.Parent:FindFirstChild("Head")
+            if pos then
+                safeTweenTo(pos.Position + Vector3.new(0,2,0), 0.7)
+                fireproximityprompt(objAlvo, 0)
+            end
+        end
     end
-    if config.tpDescer then
-        descer100()
-        config.tpDescer = false -- só executa uma vez por clique
-    end
-    if config.autoFarm then
-        autoFarm()
+    if config.alertaProximidade then
+        checarProximidade(18)
     end
     if config.autoEscape then
         autoEscape()
     end
-    if config.autoCollect then
-        autoCollect()
+    if config.autoCollectDrops then
+        autoCollectDrops()
+    end
+    if config.espPlayers then
+        criarESP()
+    end
+    if config.autoRevive then
+        autoRevive()
     end
 end)
 
--- Hotkeys e Infinite Jump
+-- Hotkeys e funções rápidas
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.Space and config.infiniteJump then
         local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
         if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
+    if input.KeyCode == Enum.KeyCode.T then
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = CFrame.new(math.random(-500,500), 50, math.random(-500,500))
+        end
+    end
     if input.KeyCode == Enum.KeyCode.Q then
         config.speedBoost = not config.speedBoost
     end
-    if input.KeyCode == Enum.KeyCode.G then
-        config.tpAltura = true
+    if input.KeyCode == Enum.KeyCode.V then
+        config.floatToBase = not config.floatToBase
     end
-    if input.KeyCode == Enum.KeyCode.H then
-        config.tpDescer = true
+    if input.KeyCode == Enum.KeyCode.C then
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = root.CFrame + Vector3.new(0, 1000, 0)
+        end
+    end
+    if input.KeyCode == Enum.KeyCode.F then
+        -- Teleporte rápido para algum player aleatório exceto você
+        local list = {}
+        for _,p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                table.insert(list, p.Character.HumanoidRootPart.Position)
+            end
+        end
+        if #list > 0 then
+            local pos = list[math.random(1,#list)]
+            safeTweenTo(pos + Vector3.new(0,2,0), 0.8)
+        end
     end
     if input.KeyCode == Enum.KeyCode.E then
         config.autoEscape = not config.autoEscape
     end
     if input.KeyCode == Enum.KeyCode.Z then
-        config.autoCollect = not config.autoCollect
+        config.autoCollectDrops = not config.autoCollectDrops
+    end
+    if input.KeyCode == Enum.KeyCode.R then
+        config.autoRevive = not config.autoRevive
     end
 end)
 
-print("✅ Brainrot Hub PRO ULTRA SAFE carregado com sucesso! Teleporte Altura (G), Descer 100 (H). Aproveite.")
+-- Botões
+local function criarBotao(texto, ordem, chave)
+    local botao = Instance.new("TextButton")
+    botao.Size = UDim2.new(0.9, 0, 0, 34)
+    botao.Position = UDim2.new(0.05, 0, 0, 48 + (ordem - 1) * 45)
+    botao.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    botao.TextColor3 = Color3.fromRGB(255, 255, 255)
+    botao.Font = Enum.Font.Gotham
+    botao.TextSize = 17
+    botao.Text = texto .. ": OFF"
+    botao.Parent = frame
+    Instance.new("UICorner", botao).CornerRadius = UDim.new(0, 6)
+
+    botao.MouseButton1Click:Connect(function()
+        config[chave] = not config[chave]
+        botao.Text = texto .. ": " .. (config[chave] and "ON" or "OFF")
+    end)
+end
+
+criarBotao("✅ Auto Farm", 1, "autoFarm")
+criarBotao("🌀 Infinite Jump", 2, "infiniteJump")
+criarBotao("🚪 Noclip", 3, "noclip")
+criarBotao("🛸 Teleport (C)", 4, "teleport")
+criarBotao("🔊 Alerta Proximidade", 5, "alertaProximidade")
+criarBotao("👁️ ESP Jogadores", 6, "espPlayers")
+criarBotao("💨 Boost Velocidade (Q)", 7, "speedBoost")
+criarBotao("🚀 Flutuar até Base (V)", 8, "floatToBase")
+criarBotao("🆘 Auto Escape (E)", 9, "autoEscape")
+criarBotao("💎 Coletar Drops (Z)", 10, "autoCollectDrops")
+criarBotao("💉 Auto Revive (R)", 11, "autoRevive")
+
+print("✅ Brainrot Hub PRO - ALL-IN-ONE carregado com sucesso!")
