@@ -32,8 +32,8 @@ local config = {
     autoCollectDrops = false
 }
 
--- Valores padrão de velocidade
-local SPEED_NORMAL = 16
+-- Valores padrão de velocidade (15 de velocidade padrão conforme solicitado)
+local SPEED_NORMAL = 15
 local SPEED_BOOST = 60
 
 -- Proteção anti-kick/idle
