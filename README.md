@@ -29,9 +29,12 @@ local config = {
     speedBoost = false,
     floatToBase = false,
     autoEscape = false,
-    autoCollectDrops = false,
-    descendV = false, -- NOVO: função para descer usando V
+    autoCollectDrops = false
 }
+
+-- Valores padrão de velocidade
+local SPEED_NORMAL = 16
+local SPEED_BOOST = 60
 
 -- Proteção anti-kick/idle
 for _,v in pairs(getconnections(LocalPlayer.Idled)) do v:Disable() end
@@ -48,8 +51,8 @@ gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 400, 0, 700)
-frame.Position = UDim2.new(0.5, -200, 0.5, -350)
+frame.Size = UDim2.new(0, 400, 0, 650)
+frame.Position = UDim2.new(0.5, -200, 0.5, -325)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BackgroundTransparency = 0.07
 frame.Active = true
@@ -67,7 +70,7 @@ title.BackgroundTransparency = 1
 local info = Instance.new("TextLabel", frame)
 info.Size = UDim2.new(1, 0, 0, 22)
 info.Position = UDim2.new(0, 0, 1, -30)
-info.Text = "F = Teleport | T = Random TP | Q = Boost | V = Flutuar/Descer 100 | E = Escape | Z = Drops"
+info.Text = "F = Teleport | T = Random TP | Q = Boost | V = Float | E = Escape | Z = Drops"
 info.TextColor3 = Color3.fromRGB(200,255,120)
 info.Font = Enum.Font.Gotham
 info.TextSize = 13
@@ -152,15 +155,26 @@ local function antiCrash()
     end
 end
 
--- InfiniteJump, Noclip, Boost, Float & AutoFarm & Descer V
+-- Garante que WalkSpeed seja restaurado ao respawnar
+LocalPlayer.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid").WalkSpeed = SPEED_NORMAL
+end)
+
+-- InfiniteJump, Noclip, Boost, Float & AutoFarm
 RunService.RenderStepped:Connect(function()
     local char = LocalPlayer.Character
+    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if config.noclip and char and char:FindFirstChildOfClass("Humanoid") then
-        char:FindFirstChildOfClass("Humanoid"):ChangeState(11)
+    -- Boost de velocidade via WalkSpeed (não CFrame)
+    if humanoid then
+        if config.speedBoost then
+            humanoid.WalkSpeed = SPEED_BOOST
+        else
+            humanoid.WalkSpeed = SPEED_NORMAL
+        end
     end
-    if config.speedBoost and hrp then
-        hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 2.2
+    if config.noclip and char and humanoid then
+        humanoid:ChangeState(11)
     end
     if config.floatToBase and hrp then
         local goal = Vector3.new(0, 120, 0)
@@ -199,15 +213,9 @@ RunService.RenderStepped:Connect(function()
         autoCollectDrops()
     end
     antiCrash()
-
-    -- NOVO: Descer V 100
-    if config.descendV and hrp then
-        hrp.CFrame = hrp.CFrame - Vector3.new(0, 100, 0)
-        config.descendV = false -- desativa para não ficar descendo sempre
-    end
 end)
 
--- InfiniteJump & Inputs
+-- InfiniteJump
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.Space and config.infiniteJump then
@@ -224,12 +232,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
         config.speedBoost = not config.speedBoost
     end
     if input.KeyCode == Enum.KeyCode.V then
-        -- Alterna entre flutuar e descer 100
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then
-            config.descendV = true
-        else
-            config.floatToBase = not config.floatToBase
-        end
+        config.floatToBase = not config.floatToBase
     end
     if input.KeyCode == Enum.KeyCode.C then
         local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -306,9 +309,8 @@ criarBotao("🔊 Alerta Proximidade", 5, "alertaProximidade")
 criarBotao("👁️ ESP Jogadores", 6, "espPlayers")
 criarBotao("💨 Boost Velocidade (Q)", 7, "speedBoost")
 criarBotao("🚀 Flutuar até Base (V)", 8, "floatToBase")
-criarBotao("⬇️ Descer 100 (Shift+V)", 9, "descendV")
-criarBotao("🆘 Auto Escape (E)", 10, "autoEscape")
-criarBotao("💎 Coletar Drops (Z)", 11, "autoCollectDrops")
+criarBotao("🆘 Auto Escape (E)", 9, "autoEscape")
+criarBotao("💎 Coletar Drops (Z)", 10, "autoCollectDrops")
 
 print("✅ Brainrot Hub Turbo ADVANCED carregado com sucesso. Aproveite!")
 
